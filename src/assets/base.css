@@ -1,4 +1,15 @@
 /* color palette from <https://github.com/vuejs/theme> */
+
+/* src/assets/base.css */
+@font-face {
+  font-family: 'HoaxVandal';
+  src: url('./fonts/HoaxVandal.ttf') format('truetype'); /* Relativer Pfad zu fonts/ */
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  font-family: 'HoaxVandal', sans-serif;
+}
 :root {
   --vt-c-white: #ffffff;
   --vt-c-white-soft: #f8f8f8;
@@ -83,4 +94,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+
+
 }

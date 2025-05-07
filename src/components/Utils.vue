@@ -1,4 +1,3 @@
-<!-- src/views/HomeView.vue -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
@@ -10,27 +9,26 @@ const start = () => {
 </script>
 
 <template>
-  <div class="home">
-    <h1 class="custom-font">Stickman App</h1>
+  <div class="greetings">
+    <h1 class="green">Stickman App</h1>
     <button @click="start" class="start-button">START</button>
   </div>
 </template>
 
 <style scoped>
+.greetings {
+  text-align: center;
+  margin-top: 20vh;
+}
 
 .start-button {
   margin-top: 2rem;
   padding: 1rem 2rem;
   font-size: 1.5rem;
-  background-color: #000;
-  color: white;
+  background-color: #000000;
   border: none;
-  border-radius: 10px;
+  color: white;
   cursor: pointer;
+  border-radius: 10px;
 }
-
-.custom-font {
-  font-family: 'hoaxvandal';
-}
-
 </style>

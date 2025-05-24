@@ -1,36 +1,52 @@
 export interface Stickman {
   name: string;
-  hat: string;  // laut deiner Backend-Klasse
+  hat: string;
 }
 
-const BASE_URL = import.meta.env.VITE_APP_BACKEND_BASE_URL || 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const stickmanService = {
-  // Testverbindung zur API
+  // Testet die API-Verbindung (z. B. /api/test)
   testApi: async (): Promise<{ message: string }> => {
     try {
-      const response = await fetch(`${BASE_URL}/api/test`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const res = await fetch(`${BASE_URL}/api/test`);
+      const contentType = res.headers.get('content-type');
+
+      if (!res.ok || !contentType?.includes('application/json')) {
+        const text = await res.text();
+        console.error('❌ Server Response (testApi):', text);
+        throw new Error('Antwort ist kein gültiges JSON.');
       }
-      return response.json();
+
+      return res.json();
     } catch (error) {
-      console.error('Error testing API:', error);
+      console.error('❌ API-Fehler beim testApi:', error);
       throw error;
     }
   },
 
-  // Holt alle Stickmen
+  // Holt alle Stickmen von /api/stickmans
   getStickmen: async (): Promise<Stickman[]> => {
     try {
-      const response = await fetch(`${BASE_URL}/api/stickmans`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const url = `${BASE_URL}/api/stickmans`;
+      console.log('📡 API-Call:', url);
+
+      const res = await fetch(url);
+      const contentType = res.headers.get('content-type');
+
+      if (!res.ok || !contentType?.includes('application/json')) {
+        const text = await res.text();
+        console.error('❌ Server Response (getStickmen):', text);
+        throw new Error('Antwort ist kein gültiges JSON.');
       }
-      return response.json();
+
+      const data = await res.json();
+      console.log('✅ Stickman-Daten erfolgreich geladen:', data);
+      return data;
     } catch (error) {
-      console.error('Error fetching stickmen:', error);
+      console.error('❌ API-Fehler beim Laden der Stickman-Daten:', error);
       throw error;
     }
   }
 };
+

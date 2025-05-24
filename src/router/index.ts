@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LandingPage from '../components/Utils.vue'
 import TheWelcome from '../views/TheWelcome.vue'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
+import StickmanList from '../components/StickmanList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +21,11 @@ const router = createRouter({
       path: '/TheWelcome',
       name: 'welcome',
       component: TheWelcome
+    },
+    {
+      path: '/stickmen',
+      name: 'stickmen',
+      component: StickmanList
     }
   ]
 })

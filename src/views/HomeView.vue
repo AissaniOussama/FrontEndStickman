@@ -1,6 +1,8 @@
 <!-- src/views/HomeView.vue -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { stickmanService } from '@/services/stickmanService'
 
 const router = useRouter()
 
@@ -11,6 +13,16 @@ const start = () => {
 const goToLogin = () => {
   router.push('/login')
 }
+
+// API-Test beim Laden der View
+onMounted(async () => {
+  try {
+    const data = await stickmanService.getStickmen()
+    console.log('✅ API test: Stickman-Daten erfolgreich geladen:', data)
+  } catch (err) {
+    console.error('❌ API-Fehler beim Laden der Stickman-Daten:', err)
+  }
+})
 </script>
 
 <template>

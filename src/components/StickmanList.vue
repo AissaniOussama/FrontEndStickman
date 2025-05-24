@@ -22,10 +22,16 @@ const error = ref('');
 
 onMounted(async () => {
   try {
+    // Log the API URL to verify environment variables
+    console.log('API URL:', import.meta.env.VITE_API_URL);
+
     // First test the API connection
-    await stickmanService.testApi();
+    const testResult = await stickmanService.testApi();
+    console.log('API Test Result:', testResult);
+
     // Then fetch the stickmen
     stickmen.value = await stickmanService.getStickmen();
+    console.log('Fetched Stickmen:', stickmen.value);
   } catch (err) {
     error.value = 'Failed to load stickmen. Please try again later.';
     console.error('Error loading stickmen:', err);

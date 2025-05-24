@@ -1,13 +1,15 @@
 export interface Stickman {
   name: string;
-  attributes: string;
+  hat: string;  // laut deiner Backend-Klasse
 }
 
+const BASE_URL = import.meta.env.VITE_APP_BACKEND_BASE_URL || 'http://localhost:8080';
+
 export const stickmanService = {
-  // Test the API connection
-  testApi: async () => {
+  // Testverbindung zur API
+  testApi: async (): Promise<{ message: string }> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/test`);
+      const response = await fetch(`${BASE_URL}/api/test`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -18,10 +20,10 @@ export const stickmanService = {
     }
   },
 
-  // Get all stickmen (using the singular endpoint as it's the primary one)
+  // Holt alle Stickmen
   getStickmen: async (): Promise<Stickman[]> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/stickman`);
+      const response = await fetch(`${BASE_URL}/api/stickmans`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

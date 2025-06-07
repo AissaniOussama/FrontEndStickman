@@ -2,19 +2,14 @@
   <div class="page-container">
     <div class="content-wrapper">
       <h3 class="custom-font">Stickman Customizer</h3>
+
       <div class="main-layout">
-        <!-- Linke Buttons -->
         <div class="number-column">
-          <div
-            class="number-box"
-            v-for="(_, index) in categoryImages"
-            :key="'left-' + index"
-          >
+          <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
             <button @click="decrease(index)">←</button>
           </div>
         </div>
 
-        <!-- Stickman mit Zubehör -->
         <div class="canvas-wrapper">
           <div class="stickman-container">
             <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
@@ -28,19 +23,13 @@
           </div>
         </div>
 
-        <!-- Rechte Buttons -->
         <div class="number-column">
-          <div
-            class="number-box"
-            v-for="(_, index) in categoryImages"
-            :key="'right-' + index"
-          >
+          <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
             <button @click="increase(index)">→</button>
           </div>
         </div>
       </div>
 
-      <!-- Save Button -->
       <button class="save-button" @click="saveToBackend">💾 Save</button>
     </div>
   </div>
@@ -48,16 +37,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { stickmanService } from '@/services/stickmanService'
 
-// Bildpfade je Kategorie
 const categoryImages = [
-  ['Hat1.png', 'Hat2.png', 'Hat3.png', 'Hat4.png'],        // Hüte
-  ['Top1.png', 'Top2.png', 'Top3.png', 'Top4.png'],        // Oberteile
-  ['Bottom1.png', 'Bottom2.png', 'Bottom3.png', 'Bottom4.png'] // Hosen
+  ['Hat0.png','Hat1.png','Hat2.png','Hat3.png','Hat4.png','Hat5.png'],
+  ['Top0.png','Top1.png','Top2.png','Top3.png','Top4.png','Top5.png'],
+  ['Bot0.png','Bot1.png','Bot2.png','Bot3.png','Bot4.png','Bot5.png']
 ]
 
-
-// Aktuelle Auswahl je Kategorie
 const currentIndexes = ref<number[]>([0, 0, 0])
 
 function increase(index: number) {
@@ -70,20 +57,23 @@ function decrease(index: number) {
   currentIndexes.value[index] = (currentIndexes.value[index] - 1 + len) % len
 }
 
-// Bildpfade aus public/images/
 function getImagePath(file: string) {
   return `/images/${file}`
 }
 
-// Für spätere Speicherung
 const saveData = computed(() => ({
+  name: 'Mein Stickman', // später optional dynamisch machen
   hat: categoryImages[0][currentIndexes.value[0]],
   top: categoryImages[1][currentIndexes.value[1]],
-  bottom: categoryImages[2][currentIndexes.value[2]]
+  bot: categoryImages[2][currentIndexes.value[2]]  // war vorher: bottom ❌
 }))
-
-function saveToBackend() {
-  console.log('Saving to backend:', JSON.stringify(saveData.value))
+async function saveToBackend() {
+  try {
+    const result = await stickmanService.saveStickman(saveData.value)
+    console.log('✅ Stickman gespeichert:', result)
+  } catch (error) {
+    console.error('❌ Fehler beim Speichern:', error)
+  }
 }
 </script>
 
@@ -94,10 +84,10 @@ function saveToBackend() {
   left: 0;
   width: 100%;
   height: 100%;
+  background: black;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: black;
 }
 
 .content-wrapper {
@@ -108,25 +98,24 @@ function saveToBackend() {
 h3.custom-font {
   font-family: 'HoaxVandal', sans-serif;
   font-size: 32px;
-  margin-bottom: 2rem;
   color: white;
+  margin-bottom: 2rem;
 }
 
 .main-layout {
   display: flex;
-  justify-content: center;
-  align-items: center;
   gap: 2rem;
-  background-color: black;
+  background: black;
   padding: 2rem;
   border-radius: 10px;
+  align-items: center;
+  justify-content: center;
 }
 
 .canvas-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
 }
 
 .stickman-container {
@@ -143,39 +132,53 @@ h3.custom-font {
 
 .accessory {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   pointer-events: none;
   z-index: 2;
 }
-//width: 484px;
-//height: 430px;
-/* Layer-Positionen */
-.layer-0 {     top: 70px; width: 100px;;}   /* Hat */
-.layer-1 { top: 90px; width: 120px; }    /* Shirt */
-.layer-2 { top: 180px; width: 100px; }   /* Shoes */
+
+.layer-0 {
+  z-index: 4;
+  top: -11px;
+  width: 507px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.layer-1 {
+  z-index: 3;
+  top: -5px;
+  width: 500px;
+  left: 49%;
+  transform: translateX(-50%);
+}
+
+.layer-2 {
+  z-index: 2;
+  top: 26px;
+  width: 458px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 
 .number-column {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   align-items: center;
-  color: white;
 }
 
 .number-box {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
 }
 
 button {
   font-size: 18px;
   padding: 0.4rem 0.6rem;
-  cursor: pointer;
   border: none;
   border-radius: 4px;
   background-color: #f0f0f0;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
@@ -192,7 +195,7 @@ button:hover {
   color: red;
   border: none;
   border-radius: 6px;
-  transition: background-color 0.3s ease;
+  transition: 0.3s;
 }
 
 .save-button:hover {

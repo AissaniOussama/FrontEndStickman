@@ -7,6 +7,8 @@
       <div v-for="stickman in stickmen" :key="stickman.name" class="stickman-card">
         <h3 class="custom-font">{{ stickman.name }}</h3>
         <p class="custom-font">{{ stickman.hat }}</p>
+        <p>{{ stickman.top }}</p>
+        <p>{{ stickman.bot }}</p>
       </div>
     </div>
   </div>

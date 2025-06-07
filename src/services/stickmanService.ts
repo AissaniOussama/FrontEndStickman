@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Stickman } from '@/types/Stickman'
+import type { Stickman } from '../types/Stickman'
 
 const BASE_URL = import.meta.env.VITE_API_URL
 const API_URL = `${BASE_URL}/api/stickmans`
@@ -13,5 +13,10 @@ export const stickmanService = {
   saveStickman: async (stickman: Omit<Stickman, 'id'>): Promise<Stickman> => {
     const response = await axios.post(API_URL, stickman)
     return response.data
+  },
+
+  testApi: async (): Promise<{ message: string }> => {
+    const res = await axios.get(`${BASE_URL}/api/test`)
+    return res.data
   }
 }

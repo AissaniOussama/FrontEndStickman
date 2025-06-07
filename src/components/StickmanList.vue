@@ -15,6 +15,8 @@
 </template>
 
 <script setup lang="ts">
+import { stickmanService } from '../services/stickmanService'
+
 import { ref, onMounted } from 'vue';
 import type { Stickman } from '../types/Stickman'
 

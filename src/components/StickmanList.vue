@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { stickmanService, type Stickman } from '../services/stickmanService';
+import type { Stickman } from '../types/Stickman'
 
 const stickmen = ref<Stickman[]>([]);
 const loading = ref(true);

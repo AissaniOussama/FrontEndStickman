@@ -1,44 +1,59 @@
 <template>
-  <div class="page-container">
-    <div class="content-wrapper">
-      <h3 class="custom-font">Stickman Customizer</h3>
 
-      <div class="main-layout">
-        <div class="number-column">
-          <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
-            <button @click="decrease(index)">←</button>
+    <div class="page-container">
+      <div class="content-wrapper">
+        <h3 class="custom-font">Stickman Customizer</h3>
+
+        <!-- 🆕 Namenseingabe + Zufallsbutton -->
+        <div class="name-input-container">
+          <input
+            v-model="customName"
+            placeholder="Name eingeben..."
+            class="name-input custom-font"
+          />
+          <button @click="generateRandomName" class="random-button custom-font">?</button>
+        </div>
+
+        <div class="main-layout">
+          <div class="number-column">
+            <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
+              <button @click="decrease(index)">←</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrapper">
+            <div class="stickman-container">
+              <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
+              <img
+                v-for="(images, i) in categoryImages"
+                :key="'layer-' + i"
+                :src="getImagePath(images[currentIndexes[i]])"
+                class="accessory"
+                :class="'layer-' + i"
+              />
+            </div>
+          </div>
+
+          <div class="number-column">
+            <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
+              <button @click="increase(index)">→</button>
+            </div>
           </div>
         </div>
 
-        <div class="canvas-wrapper">
-          <div class="stickman-container">
-            <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
-            <img
-              v-for="(images, i) in categoryImages"
-              :key="'layer-' + i"
-              :src="getImagePath(images[currentIndexes[i]])"
-              class="accessory"
-              :class="'layer-' + i"
-            />
-          </div>
-        </div>
-
-        <div class="number-column">
-          <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
-            <button @click="increase(index)">→</button>
-          </div>
-        </div>
+        <button class="save-button" @click="saveToBackend">💾 Save</button>
       </div>
-
-      <button class="save-button" @click="saveToBackend">💾 Save</button>
     </div>
-  </div>
+
+
 </template>
 
 <script setup lang="ts">
+
 import { ref, computed } from 'vue'
 import { stickmanService } from '@/services/stickmanService'
 
+// Stickman Layers
 const categoryImages = [
   ['Hat0.png','Hat1.png','Hat2.png','Hat3.png','Hat4.png','Hat5.png'],
   ['Top0.png','Top1.png','Top2.png','Top3.png','Top4.png','Top5.png'],
@@ -46,6 +61,17 @@ const categoryImages = [
 ]
 
 const currentIndexes = ref<number[]>([0, 0, 0])
+const customName = ref('')
+
+// Randomname-Komponenten
+const prefixes = ['Mr.', 'Dr.', 'Prof.', 'Big', 'Young', 'Lil', 'BIGMAN', 'poor', 'ugly', 'swaggy']
+const names = ['SchöneMann', 'Brada', 'BIGMAN', 'Swagmaster', 'O', 'Oldman', 'SwagBoy', 'Bird', 'Lion', 'Eagle', 'MoneyBoy']
+
+function generateRandomName() {
+  const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)]
+  const randomName = names[Math.floor(Math.random() * names.length)]
+  customName.value = `${randomPrefix} ${randomName}`
+}
 
 function increase(index: number) {
   const len = categoryImages[index].length
@@ -62,11 +88,12 @@ function getImagePath(file: string) {
 }
 
 const saveData = computed(() => ({
-  name: 'Mein Stickman', // später optional dynamisch machen
+  name: customName.value.trim() === '' ? 'Mein Stickman' : customName.value.trim(),
   hat: categoryImages[0][currentIndexes.value[0]],
   top: categoryImages[1][currentIndexes.value[1]],
-  bot: categoryImages[2][currentIndexes.value[2]]  // war vorher: bottom ❌
+  bot: categoryImages[2][currentIndexes.value[2]]
 }))
+
 async function saveToBackend() {
   try {
     const result = await stickmanService.saveStickman(saveData.value)
@@ -75,6 +102,8 @@ async function saveToBackend() {
     console.error('❌ Fehler beim Speichern:', error)
   }
 }
+
+
 </script>
 
 <style scoped>
@@ -100,6 +129,46 @@ h3.custom-font {
   font-size: 32px;
   color: white;
   margin-bottom: 2rem;
+}
+
+/* 🆕 Name-Eingabe mit Button */
+.name-input-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.name-input {
+  background: black;
+  border: none;
+  border-bottom: 2px solid white;
+  color: white;
+  font-size: 20px;
+  padding: 0.4rem 0.8rem;
+  width: 280px;
+  outline: none;
+  text-align: center;
+
+}
+
+
+.random-button {
+  font-size: 22px;
+  background: black;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.random-button:hover {
+  background: white;
+  color: black;
 }
 
 .main-layout {
@@ -196,7 +265,9 @@ button:hover {
   border: none;
   border-radius: 6px;
   transition: 0.3s;
+  font-family: 'HoaxVandal', sans-serif;
 }
+
 
 .save-button:hover {
   background-color: darkred;

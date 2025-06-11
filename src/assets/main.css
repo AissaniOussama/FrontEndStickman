@@ -43,4 +43,23 @@ body {
     padding: 0 2rem;
   }
 
+  /* Versteckt den Devtools-Button */
+  #vue-devtools-toggle {
+    display: none !important;
+  }
+
+  button[aria-label="Toggle Vue Devtools"],
+  #vue-devtools-toggle,
+  .vue-devtools-toggle,
+  .devtools-toggle,
+  button.devtools-toggle {
+    display: none !important;
+  }
 }
+  button[aria-label="Toggle Vue Devtools"],
+  #vue-devtools-toggle,
+  .vue-devtools-toggle,
+  .devtools-toggle,
+  button.devtools-toggle {
+    display: none !important;
+  }

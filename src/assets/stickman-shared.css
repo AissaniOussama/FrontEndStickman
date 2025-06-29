@@ -1,0 +1,101 @@
+/* Shared stickman styling for consistent appearance across views */
+
+.stickman-container {
+  position: relative;
+  width: 484px;
+  height: 430px;
+}
+
+.stickman {
+  width: 100%;
+  height: auto;
+  z-index: 1;
+}
+
+.accessory {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.layer-0 {
+  z-index: 4;
+  top: -11px;
+  width: 507px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.layer-1 {
+  z-index: 3;
+  top: -5px;
+  width: 500px;
+  left: 49%;
+  transform: translateX(-50%);
+}
+
+.layer-2 {
+  z-index: 2;
+  top: 26px;
+  width: 458px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-layout {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  background: black;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+/* Consistent button styling */
+.export-button, .back-button, .save-button {
+  padding: 0.6rem 1.2rem;
+  font-size: 18px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 6px;
+  transition: 0.3s;
+  font-family: 'HoaxVandal', sans-serif;
+  cursor: pointer;
+}
+
+.export-button:hover, .back-button:hover, .save-button:hover {
+  background-color: darkred;
+  color: white;
+}
+
+.arrow-button {
+  font-size: 24px;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.arrow-button:hover {
+  background-color: darkred;
+  color: white;
+}

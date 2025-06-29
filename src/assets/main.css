@@ -1,4 +1,5 @@
 @import './base.css';
+@import './stickman-shared.css';
 
 #app {
   max-width: 1280px;
@@ -6,9 +7,11 @@
   padding: 2rem;
   font-weight: normal;
 }
+
 html {
   zoom: 0.8;
 }
+
 a,
 .green {
   text-decoration: none;
@@ -17,16 +20,15 @@ a,
   padding: 3px;
 }
 
-
 @font-face {
   font-family: 'HoaxVandal';
   src: url('./fonts/hoaxvandal.ttf') format('truetype');
 }
 
-
 body {
   font-family: 'hoaxvandal', sans-serif;
 }
+
 @media (hover: hover) {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
@@ -58,10 +60,16 @@ body {
     display: none !important;
   }
 }
-  button[aria-label="Toggle Vue Devtools"],
-  #vue-devtools-toggle,
-  .vue-devtools-toggle,
-  .devtools-toggle,
-  button.devtools-toggle {
-    display: none !important;
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  #app {
+    padding: 1rem;
   }
+}
+
+@media (max-width: 480px) {
+  #app {
+    padding: 0.5rem;
+  }
+}

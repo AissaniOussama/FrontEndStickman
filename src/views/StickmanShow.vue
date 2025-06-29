@@ -22,7 +22,7 @@
         <button class="arrow-button" @click="prev">←</button>
 
         <div class="canvas-wrapper">
-          <div class="stickman-container">
+          <div class="stickman-container" ref="stickmanContainer">
             <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
             <img
               v-for="(images, i) in categoryImages"
@@ -37,7 +37,10 @@
         <button class="arrow-button" @click="next">→</button>
       </div>
 
-      <button class="back-button" @click="goBack">BACK</button>
+      <div class="button-row">
+        <button class="export-button" @click="exportAsPNG">Export PNG</button>
+        <button class="back-button" @click="goBack">BACK</button>
+      </div>
     </div>
   </div>
 </template>
@@ -49,6 +52,7 @@ import { stickmanService } from '@/services/stickmanService'
 import type { Stickman } from '@/types/Stickman'
 
 const router = useRouter()
+const stickmanContainer = ref<HTMLElement>()
 
 const categoryImages = [
   ['Hat0.png', 'Hat1.png', 'Hat2.png', 'Hat3.png', 'Hat4.png', 'Hat5.png'],
@@ -102,6 +106,91 @@ function filterByOwner() {
 
 function goBack() {
   router.push('/')
+}
+
+function exportAsPNG() {
+  if (!stickmanContainer.value) return
+
+  // Get the actual size of the stickman container
+  const containerRect = stickmanContainer.value.getBoundingClientRect()
+  const containerWidth = containerRect.width
+  const containerHeight = containerRect.height
+
+  // Create a canvas element
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  // Set canvas size to match the actual stickman container
+  canvas.width = containerWidth
+  canvas.height = containerHeight
+
+  // Create a temporary div to render the stickman
+  const tempDiv = document.createElement('div')
+  tempDiv.style.position = 'absolute'
+  tempDiv.style.left = '-9999px'
+  tempDiv.style.width = containerWidth + 'px'
+  tempDiv.style.height = containerHeight + 'px'
+  tempDiv.style.position = 'relative'
+  document.body.appendChild(tempDiv)
+
+  // Clone the stickman images
+  const baseImg = new Image()
+  baseImg.crossOrigin = 'anonymous'
+  baseImg.onload = () => {
+    ctx.drawImage(baseImg, 0, 0, containerWidth, containerHeight)
+
+    // Load and draw accessories
+    let loadedImages = 0
+    const totalImages = categoryImages.length
+
+    categoryImages.forEach((images, i) => {
+      const accessoryImg = new Image()
+      accessoryImg.crossOrigin = 'anonymous'
+      accessoryImg.onload = () => {
+        // Calculate scaling factor based on container size
+        const scaleFactor = containerWidth / 484 // Original width is 484px
+
+        // Apply the same positioning as CSS with scaling
+        let x = containerWidth / 2 // center
+        let y = 0
+        let width = containerWidth
+
+        if (i === 0) { // hat
+          y = -11 * scaleFactor
+          width = 507 * scaleFactor
+        } else if (i === 1) { // top
+          y = -5 * scaleFactor
+          width = 500 * scaleFactor
+        } else if (i === 2) { // bot
+          y = 26 * scaleFactor
+          width = 458 * scaleFactor
+        }
+
+        ctx.drawImage(accessoryImg, x - width/2, y, width, width * accessoryImg.height / accessoryImg.width)
+
+        loadedImages++
+        if (loadedImages === totalImages) {
+          // All images loaded, create download
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `${stickmanName.value || 'stickman'}.png`
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            }
+          })
+          document.body.removeChild(tempDiv)
+        }
+      }
+      accessoryImg.src = getImagePath(images[currentIndexes.value[i]])
+    })
+  }
+  baseImg.src = '/images/stickman-base.png'
 }
 
 onMounted(async () => {
@@ -241,7 +330,6 @@ onMounted(async () => {
 }
 
 .back-button {
-  margin-top: 2rem;
   padding: 0.6rem 1.2rem;
   font-size: 18px;
   background-color: white;
@@ -253,6 +341,29 @@ onMounted(async () => {
 }
 
 .back-button:hover {
+  background-color: darkred;
+  color: white;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.export-button {
+  padding: 0.6rem 1.2rem;
+  font-size: 18px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 6px;
+  transition: 0.3s;
+  font-family: 'HoaxVandal', sans-serif;
+}
+
+.export-button:hover {
   background-color: darkred;
   color: white;
 }

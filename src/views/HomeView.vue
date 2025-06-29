@@ -1,4 +1,3 @@
-<!-- src/views/HomeView.vue -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
@@ -14,7 +13,6 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-// API-Test beim Laden der View
 onMounted(async () => {
   try {
     const data = await stickmanService.getStickmen()
@@ -30,8 +28,8 @@ onMounted(async () => {
     <div class="content-wrapper">
       <h1 class="custom-font">Stickman App</h1>
       <div class="button-container">
-        <button @click="start" class="start-button custom-font">START</button>
-        <button @click="goToLogin" class="login-button custom-font">LOGIN</button>
+        <button @click="start" class="custom-button custom-font">START</button>
+        <button @click="goToLogin" class="custom-button custom-font">SHOW</button>
       </div>
     </div>
   </div>
@@ -47,7 +45,7 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f5f5;
+  background-color: black;
 }
 
 .content-wrapper {
@@ -58,6 +56,7 @@ onMounted(async () => {
 h1 {
   font-size: 3rem;
   margin-bottom: 2rem;
+  color: white;
 }
 
 .button-container {
@@ -66,28 +65,21 @@ h1 {
   justify-content: center;
 }
 
-.start-button, .login-button {
-  padding: 1rem 2rem;
+.custom-button {
+  padding: 1rem 2.5rem;
   font-size: 1.5rem;
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  background-color: white;
+  color: black;
   transition: all 0.3s ease;
 }
 
-.start-button {
-  background-color: #000;
+.custom-button:hover {
+  background-color: darkred;
   color: white;
-}
-
-.login-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.start-button:hover, .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .custom-font {

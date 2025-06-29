@@ -10,14 +10,13 @@ const mockedAxios = axios as unknown as {
   post: ReturnType<typeof vi.fn>
 }
 
-
 describe('stickmanService', () => {
   it('should fetch stickmen', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: [{ name: 'Testy' }] })
+    mockedAxios.get.mockResolvedValueOnce({ data: [{ name: 'Testy', owner: 'Owner1' }] })
 
     const result = await stickmanService.getStickmen()
     await flushPromises()
-    expect(result).toEqual([{ name: 'Testy' }])
+    expect(result).toEqual([{ name: 'Testy', owner: 'Owner1' }])
   })
 
   it('should save a stickman', async () => {
@@ -25,7 +24,8 @@ describe('stickmanService', () => {
       name: 'Savey',
       hat: 'Hat3.png',
       top: 'Top2.png',
-      bot: 'Bot1.png'
+      bot: 'Bot1.png',
+      owner: 'Owner2' // Hinzugefügt
     }
 
     mockedAxios.post.mockResolvedValueOnce({
@@ -39,13 +39,13 @@ describe('stickmanService', () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(expect.any(String), dummy)
   })
 
-  // ✅ 3. Fehler beim Speichern behandeln
   it('should throw an error if saving stickman fails', async () => {
     const dummy = {
       name: 'Failman',
       hat: 'Hat0.png',
       top: 'Top0.png',
-      bot: 'Bot0.png'
+      bot: 'Bot0.png',
+      owner: 'Owner3' // Hinzugefügt
     }
 
     mockedAxios.post.mockRejectedValueOnce(new Error('Server Error'))
@@ -63,5 +63,4 @@ describe('stickmanService', () => {
     expect(result).toEqual({ message: 'Hallo von der API' })
     expect(mockedAxios.get).toHaveBeenCalledWith(expect.stringContaining('/api/test'))
   })
-
 })

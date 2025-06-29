@@ -6,7 +6,9 @@
   padding: 2rem;
   font-weight: normal;
 }
-
+html {
+  zoom: 0.8;
+}
 a,
 .green {
   text-decoration: none;

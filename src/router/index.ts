@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TheWelcome from '../views/TheWelcome.vue'
 import HomeView from '../views/HomeView.vue'
-import LoginView from '../views/LoginView.vue'
+import LoginView from '../views/StickmanShow.vue'
 import StickmanList from '../components/StickmanList.vue'
 
 const router = createRouter({

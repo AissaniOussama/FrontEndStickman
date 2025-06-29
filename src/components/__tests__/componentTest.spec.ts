@@ -4,7 +4,7 @@ import StickmanList from '@/components/StickmanList.vue'
 import { stickmanService } from '@/services/stickmanService'
 import type { Stickman } from '@/types/Stickman'
 
-// 👇 Service mocken
+// 👇 Mocken des Services
 vi.mock('@/services/stickmanService', () => ({
   stickmanService: {
     testApi: vi.fn(),
@@ -24,7 +24,7 @@ describe('StickmanList.vue', () => {
 
   it('renders stickmen after successful API call', async () => {
     const mockData: Stickman[] = [
-      { id: 1, name: 'Cool Guy', hat: 'Hat1.png', top: 'Top2.png', bot: 'Bot3.png' }
+      { id: 1, name: 'Cool Guy', hat: 'Hat1.png', top: 'Top2.png', bot: 'Bot3.png', owner: 'Owner1' }
     ]
     vi.mocked(stickmanService.testApi).mockResolvedValueOnce({ message: 'OK' })
     vi.mocked(stickmanService.getStickmen).mockResolvedValueOnce(mockData)
@@ -33,6 +33,7 @@ describe('StickmanList.vue', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Cool Guy')
+    expect(wrapper.text()).toContain('Owner1') // Überprüfen, ob Owner korrekt angezeigt wird
     expect(wrapper.findAll('.stickman-card').length).toBe(1)
   })
 

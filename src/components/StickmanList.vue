@@ -4,11 +4,12 @@
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="stickman-grid">
-      <div v-for="stickman in stickmen" :key="stickman.name" class="stickman-card">
+      <div v-for="stickman in stickmen" :key="stickman.id" class="stickman-card">
         <h3 class="custom-font">{{ stickman.name }}</h3>
         <p class="custom-font">{{ stickman.hat }}</p>
         <p>{{ stickman.top }}</p>
         <p>{{ stickman.bot }}</p>
+        <p><strong>Owner:</strong> {{ stickman.owner }}</p> <!-- Owner wird hier angezeigt -->
       </div>
     </div>
   </div>
@@ -16,33 +17,29 @@
 
 <script setup lang="ts">
 import { stickmanService } from '../services/stickmanService'
-
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
 import type { Stickman } from '../types/Stickman'
 
-const stickmen = ref<Stickman[]>([]);
-const loading = ref(true);
-const error = ref('');
+const stickmen = ref<Stickman[]>([])
+const loading = ref(true)
+const error = ref('')
 
 onMounted(async () => {
   try {
-    // Log the API URL to verify environment variables
-    console.log('API URL:', import.meta.env.VITE_API_URL);
+    // Test API Connection
+    const testResult = await stickmanService.testApi()
+    console.log('API Test Result:', testResult)
 
-    // First test the API connection
-    const testResult = await stickmanService.testApi();
-    console.log('API Test Result:', testResult);
-
-    // Then fetch the stickmen
-    stickmen.value = await stickmanService.getStickmen();
-    console.log('Fetched Stickmen:', stickmen.value);
+    // Fetch stickmen
+    stickmen.value = await stickmanService.getStickmen()
+    console.log('Fetched Stickmen:', stickmen.value)
   } catch (err) {
-    error.value = 'Failed to load stickmen. Please try again later.';
-    console.error('Error loading stickmen:', err);
+    error.value = 'Failed to load stickmen. Please try again later.'
+    console.error('Error loading stickmen:', err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 </script>
 
 <style scoped>

@@ -1,69 +1,81 @@
 <template>
+  <div class="page-container">
+    <div class="content-wrapper">
+      <h3 class="custom-font">Stickman Customizer</h3>
 
-    <div class="page-container">
-      <div class="content-wrapper">
-        <h3 class="custom-font">Stickman Customizer</h3>
+      <!-- Name-Eingabe mit Button -->
+      <div class="name-input-container">
+        <input
+          v-model="customName"
+          placeholder="Name eingeben..."
+          class="name-input custom-font"
+        />
+        <button @click="generateRandomName" class="random-button custom-font">?</button>
+      </div>
 
-        <!-- 🆕 Namenseingabe + Zufallsbutton -->
-        <div class="name-input-container">
-          <input
-            v-model="customName"
-            placeholder="Name eingeben..."
-            class="name-input custom-font"
-          />
-          <button @click="generateRandomName" class="random-button custom-font">?</button>
-        </div>
+      <!-- Besitzer-Eingabe mit unsichtbarem Platzhalter-Button -->
+      <div class="name-input-container">
+        <input
+          v-model="customOwner"
+          placeholder="Ersteller des Stickman..."
+          class="name-input custom-font"
+        />
+        <button disabled class="random-button transparent-button"></button>
+      </div>
 
-        <div class="main-layout">
-          <div class="number-column">
-            <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
-              <button @click="decrease(index)">←</button>
-            </div>
-          </div>
-
-          <div class="canvas-wrapper">
-            <div class="stickman-container">
-              <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
-              <img
-                v-for="(images, i) in categoryImages"
-                :key="'layer-' + i"
-                :src="getImagePath(images[currentIndexes[i]])"
-                class="accessory"
-                :class="'layer-' + i"
-              />
-            </div>
-          </div>
-
-          <div class="number-column">
-            <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
-              <button @click="increase(index)">→</button>
-            </div>
+      <div class="main-layout">
+        <div class="number-column">
+          <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
+            <button @click="decrease(index)">←</button>
           </div>
         </div>
 
-        <button class="save-button" @click="saveToBackend">💾 Save</button>
+        <div class="canvas-wrapper">
+          <div class="stickman-container">
+            <img src="/images/stickman-base.png" alt="Stickman" class="stickman" />
+            <img
+              v-for="(images, i) in categoryImages"
+              :key="'layer-' + i"
+              :src="getImagePath(images[currentIndexes[i]])"
+              class="accessory"
+              :class="'layer-' + i"
+            />
+          </div>
+        </div>
+
+        <div class="number-column">
+          <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
+            <button @click="increase(index)">→</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save & Back Buttons nebeneinander -->
+      <div class="button-row">
+        <button class="back-button" @click="goBack">Back</button>
+        <button class="save-button" @click="saveToBackend">Save</button>
       </div>
     </div>
-
-
+  </div>
 </template>
 
 <script setup lang="ts">
-
 import { ref, computed } from 'vue'
 import { stickmanService } from '@/services/stickmanService'
+import { useRouter } from 'vue-router'
 
-// Stickman Layers
+const router = useRouter()
+
 const categoryImages = [
-  ['Hat0.png','Hat1.png','Hat2.png','Hat3.png','Hat4.png','Hat5.png'],
-  ['Top0.png','Top1.png','Top2.png','Top3.png','Top4.png','Top5.png'],
-  ['Bot0.png','Bot1.png','Bot2.png','Bot3.png','Bot4.png','Bot5.png']
+  ['Hat0.png', 'Hat1.png', 'Hat2.png', 'Hat3.png', 'Hat4.png', 'Hat5.png'],
+  ['Top0.png', 'Top1.png', 'Top2.png', 'Top3.png', 'Top4.png', 'Top5.png'],
+  ['Bot0.png', 'Bot1.png', 'Bot2.png', 'Bot3.png', 'Bot4.png', 'Bot5.png']
 ]
 
 const currentIndexes = ref<number[]>([0, 0, 0])
 const customName = ref('')
+const customOwner = ref('')
 
-// Randomname-Komponenten
 const prefixes = ['Mr.', 'Dr.', 'Prof.', 'Big', 'Young', 'Lil', 'BIGMAN', 'poor', 'ugly', 'swaggy']
 const names = ['SchöneMann', 'Brada', 'BIGMAN', 'Swagmaster', 'O', 'Oldman', 'SwagBoy', 'Bird', 'Lion', 'Eagle', 'MoneyBoy']
 
@@ -89,6 +101,7 @@ function getImagePath(file: string) {
 
 const saveData = computed(() => ({
   name: customName.value.trim() === '' ? 'Mein Stickman' : customName.value.trim(),
+  owner: customOwner.value.trim() === '' ? null : customOwner.value.trim(),
   hat: categoryImages[0][currentIndexes.value[0]],
   top: categoryImages[1][currentIndexes.value[1]],
   bot: categoryImages[2][currentIndexes.value[2]]
@@ -103,7 +116,9 @@ async function saveToBackend() {
   }
 }
 
-
+function goBack() {
+  router.back()
+}
 </script>
 
 <style scoped>
@@ -131,12 +146,11 @@ h3.custom-font {
   margin-bottom: 2rem;
 }
 
-/* 🆕 Name-Eingabe mit Button */
 .name-input-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
   gap: 1rem;
 }
 
@@ -150,9 +164,7 @@ h3.custom-font {
   width: 280px;
   outline: none;
   text-align: center;
-
 }
-
 
 .random-button {
   font-size: 22px;
@@ -169,6 +181,10 @@ h3.custom-font {
 .random-button:hover {
   background: white;
   color: black;
+}
+
+.transparent-button {
+  visibility: hidden;
 }
 
 .main-layout {
@@ -256,20 +272,25 @@ button:hover {
   transform: translateY(-2px);
 }
 
-.save-button {
+.button-row {
   margin-top: 2rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.save-button, .back-button {
   padding: 0.6rem 1.2rem;
   font-size: 18px;
   background-color: white;
-  color: red;
+  color: black;
   border: none;
   border-radius: 6px;
   transition: 0.3s;
   font-family: 'HoaxVandal', sans-serif;
 }
 
-
-.save-button:hover {
+.save-button:hover, .back-button:hover {
   background-color: darkred;
   color: white;
 }

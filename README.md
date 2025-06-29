@@ -1,45 +1,39 @@
-# FrontendStickman
+WebTechnologien Projekt
 
-This template should help get you started developing with Vue 3 in Vite.
+Mitglieder Oussama Aissani Luca Fritzsching
 
-## Recommended IDE Setup
+Projektbeschreibung Die Stickman Customization App ermöglicht es den Benutzern, ihren eigenen Stickman zu erstellen und zu personalisieren. Du kannst verschiedene Outfits (Hüte, Oberteile, Hosen & Schuhe) auswählen, einen Namen und einen Besitzer vergeben. Nach dem Erstellen kannst du deinen Stickman speichern und ihn später anzeigen lassen. Zudem gibt es eine Filteroption, um Stickmänner nach dem Besitzer zu suchen.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+Features: Personalisierung: Wähle Accessoires für deinen Stickman (Hut, Oberteil, Unterteil).
 
-## Type Support for `.vue` Imports in TS
+Name und Besitzer: Vergib einen Namen und einen Besitzer für deinen Stickman.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+Random Name: Klicke auf einen Button, um einen zufälligen Namen zu generieren.
 
-## Customize configuration
+Speichern und Filtern: Speichere deine Stickmänner und filtere sie später nach dem Besitzer.
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+Nutzung der App: App starten:
 
-## Project Setup
+Öffne die App im Browser unter https://frontendstickman.onrender.com.
 
-```sh
-npm install
-```
+Stickman erstellen:
 
-### Compile and Hot-Reload for Development
+Vergib einen Namen für deinen Stickman.
 
-```sh
-npm run dev
-```
+Wähle Accessoires aus:
 
-### Type-Check, Compile and Minify for Production
+Hut: Wähle aus verschiedenen Hüten.
 
-```sh
-npm run build
-```
+Oberteil: Entscheide dich für ein passendes Oberteil.
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+Unterteil: Wähle Hosen oder Schuhe aus.
 
-```sh
-npm run test:unit
-```
+Du kannst auch den "Random Name"-Button verwenden, um einen zufälligen Namen für deinen Stickman zu generieren.
 
-### Lint with [ESLint](https://eslint.org/)
+Stickman speichern:
 
-```sh
-npm run lint
-```
+Sobald dein Stickman erstellt ist, kannst du ihn speichern. Der Stickman erhält automatisch den Namen und den Besitzer, den du angegeben hast.
+
+Stickman anzeigen und filtern:
+
+Du kannst alle gespeicherten Stickmänner anzeigen und nach Besitzer filtern, um einen bestimmten Stickman zu finden.

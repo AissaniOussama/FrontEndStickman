@@ -26,7 +26,10 @@
       <div class="main-layout">
         <div class="number-column">
           <div class="number-box" v-for="(_, index) in categoryImages" :key="'left-' + index">
-            <button @click="decrease(index)">←</button>
+            <div class="category-label" :class="{ 'focused': currentFocus === index }">
+              {{ index === 0 ? 'Hat' : index === 1 ? 'Top' : 'Bot' }}
+            </div>
+            <button @click="decrease(index)" :class="{ 'focused': currentFocus === index }">←</button>
           </div>
         </div>
 
@@ -45,23 +48,31 @@
 
         <div class="number-column">
           <div class="number-box" v-for="(_, index) in categoryImages" :key="'right-' + index">
-            <button @click="increase(index)">→</button>
+            <div class="category-label" :class="{ 'focused': currentFocus === index }">
+              {{ index === 0 ? 'Hat' : index === 1 ? 'Top' : 'Bot' }}
+            </div>
+            <button @click="increase(index)" :class="{ 'focused': currentFocus === index }">→</button>
           </div>
         </div>
       </div>
 
       <!-- Save, Export & Back Buttons nebeneinander -->
       <div class="button-row">
-        <button class="export-button" @click="exportAsPNG">Export PNG</button>
-        <button class="save-button" @click="saveToBackend">Save</button>
-        <button class="back-button" @click="goBack">Back</button>
+        <button class="export-button" @click="exportAsPNG" :class="{ 'focused': currentFocus === 3 }">Export PNG</button>
+        <button class="save-button" @click="saveToBackend" :class="{ 'focused': currentFocus === 4 }">Save</button>
+        <button class="back-button" @click="goBack" :class="{ 'focused': currentFocus === 5 }">Back</button>
+      </div>
+
+      <!-- Keyboard navigation help -->
+      <div class="keyboard-help">
+        <span class="help-text">⌨️ Tab: Switch focus • ← →: Change selection • Space/Enter: Activate</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { stickmanService } from '@/services/stickmanService'
 import { useRouter } from 'vue-router'
 
@@ -77,6 +88,7 @@ const categoryImages = [
 const currentIndexes = ref<number[]>([0, 0, 0])
 const customName = ref('')
 const customOwner = ref('')
+const currentFocus = ref(0) // 0=hat, 1=top, 2=bot, 3=export, 4=save, 5=back
 
 const prefixes = ['Mr.', 'Dr.', 'Prof.', 'Big', 'Young', 'Lil', 'BIGMAN', 'poor', 'ugly', 'swaggy']
 const names = ['SchöneMann', 'Brada', 'BIGMAN', 'Swagmaster', 'O', 'Oldman', 'SwagBoy', 'Bird', 'Lion', 'Eagle', 'MoneyBoy']
@@ -119,7 +131,7 @@ async function saveToBackend() {
 }
 
 function goBack() {
-  router.back()
+  router.push('/')
 }
 
 function exportAsPNG() {
@@ -206,6 +218,86 @@ function exportAsPNG() {
   }
   baseImg.src = '/images/stickman-base.png'
 }
+
+onMounted(() => {
+  // Add keyboard listener for tab and arrow navigation
+  const handleKeydown = (event: KeyboardEvent) => {
+    // Don't interfere if user is typing in input fields
+    if (event.target instanceof HTMLInputElement) {
+      return
+    }
+
+    if (event.key === 'Tab') {
+      event.preventDefault()
+      // Cycle through focus areas: hat -> top -> bot -> export -> save -> back
+      currentFocus.value = (currentFocus.value + 1) % 6
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      if (currentFocus.value < 3) {
+        // In a category, change accessory
+        decrease(currentFocus.value)
+      } else if (currentFocus.value === 3) {
+        // On export button, go to back button
+        currentFocus.value = 5
+      } else if (currentFocus.value === 4) {
+        // On save button, go to export button
+        currentFocus.value = 3
+      } else if (currentFocus.value === 5) {
+        // On back button, go to save button
+        currentFocus.value = 4
+      } else {
+        // If not focused on anything specific, change hat
+        decrease(0)
+      }
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      if (currentFocus.value < 3) {
+        // In a category, change accessory
+        increase(currentFocus.value)
+      } else if (currentFocus.value === 3) {
+        // On export button, go to save button
+        currentFocus.value = 4
+      } else if (currentFocus.value === 4) {
+        // On save button, go to back button
+        currentFocus.value = 5
+      } else if (currentFocus.value === 5) {
+        // On back button, go to export button
+        currentFocus.value = 3
+      } else {
+        // If not focused on anything specific, change hat
+        increase(0)
+      }
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      // Switch to previous category
+      currentFocus.value = (currentFocus.value - 1 + 3) % 3
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      // Switch to next category
+      currentFocus.value = (currentFocus.value + 1) % 3
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      if (currentFocus.value === 3) {
+        exportAsPNG()
+      } else if (currentFocus.value === 4) {
+        saveToBackend()
+      } else if (currentFocus.value === 5) {
+        goBack()
+      }
+    } else if (event.key === ' ') {
+      event.preventDefault()
+      if (currentFocus.value === 3) {
+        exportAsPNG()
+      } else if (currentFocus.value === 4) {
+        saveToBackend()
+      } else if (currentFocus.value === 5) {
+        goBack()
+      }
+    }
+  }
+
+  document.addEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -397,5 +489,40 @@ button:hover {
 .export-button:hover {
   background-color: darkred;
   color: white;
+}
+
+.focused {
+  background-color: darkred !important;
+  color: white !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.keyboard-help {
+  margin-top: 1rem;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  background-color: white;
+  border-radius: 6px;
+}
+
+.help-text {
+  font-size: 14px;
+  color: black;
+  font-family: sans-serif;
+}
+
+.category-label {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.category-label.focused {
+  color: darkred;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  transform: scale(1.1);
 }
 </style>

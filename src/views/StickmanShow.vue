@@ -9,17 +9,19 @@
           @input="filterByOwner"
           placeholder="Filter nach Ersteller..."
           class="input-field"
+          :class="{ 'focused': currentFocus === 0 }"
         />
         <input
           v-model="stickmanName"
           placeholder="Mein Stickman"
           class="input-field"
           readonly
+          :class="{ 'focused': currentFocus === 1 }"
         />
       </div>
 
       <div class="main-layout">
-        <button class="arrow-button" @click="prev">←</button>
+        <button class="arrow-button" @click="prev" :class="{ 'focused': currentFocus === 2 }">←</button>
 
         <div class="canvas-wrapper">
           <div class="stickman-container" ref="stickmanContainer">
@@ -34,12 +36,17 @@
           </div>
         </div>
 
-        <button class="arrow-button" @click="next">→</button>
+        <button class="arrow-button" @click="next" :class="{ 'focused': currentFocus === 3 }">→</button>
       </div>
 
       <div class="button-row">
-        <button class="export-button" @click="exportAsPNG">Export PNG</button>
-        <button class="back-button" @click="goBack">BACK</button>
+        <button class="export-button" @click="exportAsPNG" :class="{ 'focused': currentFocus === 4 }">Export PNG</button>
+        <button class="back-button" @click="goBack" :class="{ 'focused': currentFocus === 5 }">BACK</button>
+      </div>
+
+      <!-- Keyboard navigation help -->
+      <div class="keyboard-help">
+        <span class="help-text">⌨️ Tab: Switch focus • ← →: Navigate • Space/Enter: Activate</span>
       </div>
     </div>
   </div>
@@ -66,6 +73,7 @@ const currentStickmanIndex = ref(0)
 const currentIndexes = ref<number[]>([0, 0, 0])
 const ownerFilter = ref('')
 const stickmanName = ref('')
+const currentFocus = ref(0) // 0=owner filter, 1=name field, 2=prev button, 3=next button, 4=export button, 5=back button
 
 function getImagePath(file: string) {
   return `/images/${file}`
@@ -194,15 +202,83 @@ function exportAsPNG() {
 }
 
 onMounted(async () => {
+  // Add keyboard listener for tab, arrow, space, and enter navigation
+  const handleKeydown = (event: KeyboardEvent) => {
+    // Don't interfere if user is typing in input fields
+    if (event.target instanceof HTMLInputElement) {
+      return
+    }
+
+    if (event.key === 'Tab') {
+      event.preventDefault()
+      // Cycle through focus areas: owner filter -> name field -> prev -> next -> export -> back
+      currentFocus.value = (currentFocus.value + 1) % 6
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      if (currentFocus.value === 2) {
+        // On prev button, go to back button
+        currentFocus.value = 5
+      } else if (currentFocus.value === 3) {
+        // On next button, go to prev button
+        currentFocus.value = 2
+      } else if (currentFocus.value === 4) {
+        // On export button, go to next button
+        currentFocus.value = 3
+      } else if (currentFocus.value === 5) {
+        // On back button, go to export button
+        currentFocus.value = 4
+      } else {
+        // If not focused on buttons, just navigate stickmen
+        prev()
+      }
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      if (currentFocus.value === 2) {
+        // On prev button, go to next button
+        currentFocus.value = 3
+      } else if (currentFocus.value === 3) {
+        // On next button, go to export button
+        currentFocus.value = 4
+      } else if (currentFocus.value === 4) {
+        // On export button, go to back button
+        currentFocus.value = 5
+      } else if (currentFocus.value === 5) {
+        // On back button, go to prev button
+        currentFocus.value = 2
+      } else {
+        // If not focused on buttons, just navigate stickmen
+        next()
+      }
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      if (currentFocus.value === 2) {
+        prev()
+      } else if (currentFocus.value === 3) {
+        next()
+      } else if (currentFocus.value === 4) {
+        exportAsPNG()
+      } else if (currentFocus.value === 5) {
+        goBack()
+      }
+    }
+  }
+
+  document.addEventListener('keydown', handleKeydown)
+
   try {
     const data = await stickmanService.getStickmen()
     stickmen.value = data
     filteredStickmen.value = data
+    console.log('✅ Loaded stickmen:', data.length, 'stickmen')
     if (data.length > 0) {
       applyStickman(data[0])
+    } else {
+      console.log('ℹ️ No stickmen found in database')
     }
   } catch (err) {
-    console.error('Fehler beim Laden der Stickmen:', err)
+    console.error('❌ Error loading stickmen:', err)
+    // Show user-friendly error message
+    stickmanName.value = 'Backend not connected'
   }
 })
 </script>
@@ -366,5 +442,31 @@ onMounted(async () => {
 .export-button:hover {
   background-color: darkred;
   color: white;
+}
+
+.focused {
+  background-color: darkred !important;
+  color: white !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.input-field.focused {
+  border-bottom: 3px solid darkred;
+  background-color: rgba(139, 0, 0, 0.1);
+}
+
+.keyboard-help {
+  margin-top: 2rem;
+  padding: 0.6rem 1rem;
+  background-color: white;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.help-text {
+  font-size: 14px;
+  color: black;
+  font-family: sans-serif;
 }
 </style>

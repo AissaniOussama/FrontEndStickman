@@ -4,5 +4,5 @@ export interface Stickman {
   hat: string
   top: string
   bot: string
-  owner: string // NEU
+  owner: string | null
 }

@@ -3,5 +3,5 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <RouterView /> <!-- zeigt nun die richtige Route-Komponente -->
+  <RouterView />
 </template>

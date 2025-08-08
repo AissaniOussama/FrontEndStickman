@@ -115,90 +115,69 @@ function filterByOwner() {
 function goBack() {
   router.push('/')
 }
+async function exportAsPNG() {
+  if (!stickmanContainer.value) return;
 
-function exportAsPNG() {
-  if (!stickmanContainer.value) return
+  const containerEl = stickmanContainer.value;
+  const dpr = window.devicePixelRatio || 1;
 
-  // Get the actual size of the stickman container
-  const containerRect = stickmanContainer.value.getBoundingClientRect()
-  const containerWidth = containerRect.width
-  const containerHeight = containerRect.height
+  const baseEl = containerEl.querySelector('img.stickman') as HTMLImageElement;
+  const accessoryEls = Array.from(containerEl.querySelectorAll('img.accessory')) as HTMLImageElement[];
+  const allEls = [baseEl, ...accessoryEls].filter(Boolean);
 
-  // Create a canvas element
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  // 1) Bounding-Box aller Layer
+  let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity, maxBottom = -Infinity;
+  allEls.forEach((el) => {
+    const r = el.getBoundingClientRect();
+    minLeft = Math.min(minLeft, r.left);
+    minTop = Math.min(minTop, r.top);
+    maxRight = Math.max(maxRight, r.right);
+    maxBottom = Math.max(maxBottom, r.bottom);
+  });
 
-  // Set canvas size to match the actual stickman container
-  canvas.width = containerWidth
-  canvas.height = containerHeight
+  const width = maxRight - minLeft;
+  const height = maxBottom - minTop;
+  const PADDING = 0;
 
-  // Create a temporary div to render the stickman
-  const tempDiv = document.createElement('div')
-  tempDiv.style.position = 'absolute'
-  tempDiv.style.left = '-9999px'
-  tempDiv.style.width = containerWidth + 'px'
-  tempDiv.style.height = containerHeight + 'px'
-  tempDiv.style.position = 'relative'
-  document.body.appendChild(tempDiv)
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-  // Clone the stickman images
-  const baseImg = new Image()
-  baseImg.crossOrigin = 'anonymous'
-  baseImg.onload = () => {
-    ctx.drawImage(baseImg, 0, 0, containerWidth, containerHeight)
+  canvas.width = Math.round((width + PADDING * 2) * dpr);
+  canvas.height = Math.round((height + PADDING * 2) * dpr);
+  ctx.scale(dpr, dpr);
 
-    // Load and draw accessories
-    let loadedImages = 0
-    const totalImages = categoryImages.length
+  const drawImgAtRect = (el: HTMLImageElement) =>
+    new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const r = el.getBoundingClientRect();
+        const x = (r.left - minLeft) + PADDING;
+        const y = (r.top - minTop) + PADDING;
+        ctx.drawImage(img, x, y, r.width, r.height);
+        resolve();
+      };
+      img.src = el.src;
+    });
 
-    categoryImages.forEach((images, i) => {
-      const accessoryImg = new Image()
-      accessoryImg.crossOrigin = 'anonymous'
-      accessoryImg.onload = () => {
-        // Calculate scaling factor based on container size
-        const scaleFactor = containerWidth / 484 // Original width is 484px
-
-        // Apply the same positioning as CSS with scaling
-        let x = containerWidth / 2 // center
-        let y = 0
-        let width = containerWidth
-
-        if (i === 0) { // hat
-          y = -11 * scaleFactor
-          width = 507 * scaleFactor
-        } else if (i === 1) { // top
-          y = -5 * scaleFactor
-          width = 500 * scaleFactor
-        } else if (i === 2) { // bot
-          y = 26 * scaleFactor
-          width = 458 * scaleFactor
-        }
-
-        ctx.drawImage(accessoryImg, x - width/2, y, width, width * accessoryImg.height / accessoryImg.width)
-
-        loadedImages++
-        if (loadedImages === totalImages) {
-          // All images loaded, create download
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `${stickmanName.value || 'stickman'}.png`
-              document.body.appendChild(a)
-              a.click()
-              document.body.removeChild(a)
-              URL.revokeObjectURL(url)
-            }
-          })
-          document.body.removeChild(tempDiv)
-        }
-      }
-      accessoryImg.src = getImagePath(images[currentIndexes.value[i]])
-    })
+  // erst Base, dann Accessories
+  await drawImgAtRect(baseEl);
+  for (const el of accessoryEls) {
+    await drawImgAtRect(el);
   }
-  baseImg.src = '/images/stickman-base.png'
+
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${stickmanName.value || 'stickman'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
 }
 
 onMounted(async () => {

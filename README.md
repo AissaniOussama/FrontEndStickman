@@ -18,7 +18,7 @@ Nutzung der App:
 
 App starten:
 
-Starte das Backend über https://webtechrepo.onrender.com/api/stickmans (fährt durch Inaktivität herunter). 
+Starte das Backend über https://webtechrepo.onrender.com/api/stickmans (fährt durch Inaktivität herunter - hochfahren dauert ca. 3 Minuten). 
 
 Öffne die App im Browser unter https://frontendstickman.onrender.com.
 

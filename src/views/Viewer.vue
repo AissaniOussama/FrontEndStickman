@@ -44,7 +44,6 @@
         <button class="back-button" @click="goBack" :class="{ 'focused': currentFocus === 5 }">BACK</button>
       </div>
 
-      <!-- Keyboard navigation help -->
       <div class="keyboard-help">
         <span class="help-text">⌨️ Tab: Switch focus • ← →: Navigate • Space/Enter: Activate</span>
       </div>
@@ -73,7 +72,7 @@ const currentStickmanIndex = ref(0)
 const currentIndexes = ref<number[]>([0, 0, 0])
 const ownerFilter = ref('')
 const stickmanName = ref('')
-const currentFocus = ref(0) // 0=owner filter, 1=name field, 2=prev button, 3=next button, 4=export button, 5=back button
+const currentFocus = ref(0) // 0=owner filter, 1=name field, 2=prev, 3=next, 4=export, 5=back
 
 function getImagePath(file: string) {
   return `/images/${file}`
@@ -105,140 +104,110 @@ function filterByOwner() {
   filteredStickmen.value = search === ''
     ? [...stickmen.value]
     : stickmen.value.filter(s => s.owner?.toLowerCase().includes(search))
-
   currentStickmanIndex.value = 0
-  if (filteredStickmen.value.length > 0) {
-    applyStickman(filteredStickmen.value[0])
-  }
+  if (filteredStickmen.value.length > 0) applyStickman(filteredStickmen.value[0])
 }
 
 function goBack() {
   router.push('/')
 }
+
+function sanitizeFilename(name: string) {
+  const trimmed = (name || '').trim()
+  const fallback = 'MeinStickman'
+  return (trimmed || fallback).replace(/[\/\\?%*:|"<>]/g, '_')
+}
+
 async function exportAsPNG() {
-  if (!stickmanContainer.value) return;
+  if (!stickmanContainer.value) return
+  const containerEl = stickmanContainer.value
+  const dpr = window.devicePixelRatio || 1
 
-  const containerEl = stickmanContainer.value;
-  const dpr = window.devicePixelRatio || 1;
+  const baseEl = containerEl.querySelector('img.stickman') as HTMLImageElement
+  const accessoryEls = Array.from(containerEl.querySelectorAll('img.accessory')) as HTMLImageElement[]
+  const allEls = [baseEl, ...accessoryEls].filter(Boolean)
 
-  const baseEl = containerEl.querySelector('img.stickman') as HTMLImageElement;
-  const accessoryEls = Array.from(containerEl.querySelectorAll('img.accessory')) as HTMLImageElement[];
-  const allEls = [baseEl, ...accessoryEls].filter(Boolean);
-
-  // 1) Bounding-Box aller Layer
-  let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity, maxBottom = -Infinity;
+  // Bounding-Box
+  let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity, maxBottom = -Infinity
   allEls.forEach((el) => {
-    const r = el.getBoundingClientRect();
-    minLeft = Math.min(minLeft, r.left);
-    minTop = Math.min(minTop, r.top);
-    maxRight = Math.max(maxRight, r.right);
-    maxBottom = Math.max(maxBottom, r.bottom);
-  });
+    const r = el.getBoundingClientRect()
+    minLeft = Math.min(minLeft, r.left)
+    minTop = Math.min(minTop, r.top)
+    maxRight = Math.max(maxRight, r.right)
+    maxBottom = Math.max(maxBottom, r.bottom)
+  })
 
-  const width = maxRight - minLeft;
-  const height = maxBottom - minTop;
-  const PADDING = 0;
+  const width = maxRight - minLeft
+  const height = maxBottom - minTop
+  const PADDING = 0
 
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-  canvas.width = Math.round((width + PADDING * 2) * dpr);
-  canvas.height = Math.round((height + PADDING * 2) * dpr);
-  ctx.scale(dpr, dpr);
+  canvas.width = Math.round((width + PADDING * 2) * dpr)
+  canvas.height = Math.round((height + PADDING * 2) * dpr)
+  ctx.scale(dpr, dpr)
 
   const drawImgAtRect = (el: HTMLImageElement) =>
     new Promise<void>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
       img.onload = () => {
-        const r = el.getBoundingClientRect();
-        const x = (r.left - minLeft) + PADDING;
-        const y = (r.top - minTop) + PADDING;
-        ctx.drawImage(img, x, y, r.width, r.height);
-        resolve();
-      };
-      img.src = el.src;
-    });
+        const r = el.getBoundingClientRect()
+        const x = (r.left - minLeft) + PADDING
+        const y = (r.top - minTop) + PADDING
+        ctx.drawImage(img, x, y, r.width, r.height)
+        resolve()
+      }
+      img.src = el.src
+    })
 
-  // erst Base, dann Accessories
-  await drawImgAtRect(baseEl);
-  for (const el of accessoryEls) {
-    await drawImgAtRect(el);
-  }
+  await drawImgAtRect(baseEl)
+  for (const el of accessoryEls) await drawImgAtRect(el)
+
+  const fileName = sanitizeFilename(stickmanName.value) + '.png'
 
   canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${stickmanName.value || 'stickman'}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  })
 }
 
 onMounted(async () => {
-  // Add keyboard listener for tab, arrow, space, and enter navigation
   const handleKeydown = (event: KeyboardEvent) => {
-    // Don't interfere if user is typing in input fields
-    if (event.target instanceof HTMLInputElement) {
-      return
-    }
+    if (event.target instanceof HTMLInputElement) return
 
     if (event.key === 'Tab') {
       event.preventDefault()
-      // Cycle through focus areas: owner filter -> name field -> prev -> next -> export -> back
       currentFocus.value = (currentFocus.value + 1) % 6
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault()
-      if (currentFocus.value === 2) {
-        // On prev button, go to back button
-        currentFocus.value = 5
-      } else if (currentFocus.value === 3) {
-        // On next button, go to prev button
-        currentFocus.value = 2
-      } else if (currentFocus.value === 4) {
-        // On export button, go to next button
-        currentFocus.value = 3
-      } else if (currentFocus.value === 5) {
-        // On back button, go to export button
-        currentFocus.value = 4
-      } else {
-        // If not focused on buttons, just navigate stickmen
-        prev()
-      }
+      if (currentFocus.value === 2) currentFocus.value = 5
+      else if (currentFocus.value === 3) currentFocus.value = 2
+      else if (currentFocus.value === 4) currentFocus.value = 3
+      else if (currentFocus.value === 5) currentFocus.value = 4
+      else prev()
     } else if (event.key === 'ArrowRight') {
       event.preventDefault()
-      if (currentFocus.value === 2) {
-        // On prev button, go to next button
-        currentFocus.value = 3
-      } else if (currentFocus.value === 3) {
-        // On next button, go to export button
-        currentFocus.value = 4
-      } else if (currentFocus.value === 4) {
-        // On export button, go to back button
-        currentFocus.value = 5
-      } else if (currentFocus.value === 5) {
-        // On back button, go to prev button
-        currentFocus.value = 2
-      } else {
-        // If not focused on buttons, just navigate stickmen
-        next()
-      }
+      if (currentFocus.value === 2) currentFocus.value = 3
+      else if (currentFocus.value === 3) currentFocus.value = 4
+      else if (currentFocus.value === 4) currentFocus.value = 5
+      else if (currentFocus.value === 5) currentFocus.value = 2
+      else next()
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      if (currentFocus.value === 2) {
-        prev()
-      } else if (currentFocus.value === 3) {
-        next()
-      } else if (currentFocus.value === 4) {
-        exportAsPNG()
-      } else if (currentFocus.value === 5) {
-        goBack()
-      }
+      if (currentFocus.value === 2) prev()
+      else if (currentFocus.value === 3) next()
+      else if (currentFocus.value === 4) exportAsPNG()
+      else if (currentFocus.value === 5) goBack()
     }
   }
 
@@ -248,15 +217,9 @@ onMounted(async () => {
     const data = await stickmanService.getStickmen()
     stickmen.value = data
     filteredStickmen.value = data
-    console.log('✅ Loaded stickmen:', data.length, 'stickmen')
-    if (data.length > 0) {
-      applyStickman(data[0])
-    } else {
-      console.log('ℹ️ No stickmen found in database')
-    }
+    if (data.length > 0) applyStickman(data[0])
   } catch (err) {
     console.error('❌ Error loading stickmen:', err)
-    // Show user-friendly error message
     stickmanName.value = 'Backend not connected'
   }
 })
@@ -264,188 +227,45 @@ onMounted(async () => {
 
 <style scoped>
 .page-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  zoom: 0.8;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: black; display: flex; justify-content: center; align-items: center; zoom: 0.8;
 }
+.content-wrapper { text-align: center; padding: 2rem; }
+.title { font-family: 'HoaxVandal', sans-serif; font-size: 32px; color: white; margin-bottom: 2rem; }
 
-.content-wrapper {
-  text-align: center;
-  padding: 2rem;
-}
-
-.title {
-  font-family: 'HoaxVandal', sans-serif;
-  font-size: 32px;
-  color: white;
-  margin-bottom: 2rem;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
+.input-group { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem; }
 .input-field {
-  background: black;
-  border: none;
-  border-bottom: 2px solid white;
-  color: white;
-  font-size: 20px;
-  padding: 0.4rem 0.8rem;
-  width: 280px;
-  outline: none;
-  text-align: center;
-  font-family: sans-serif;
+  background: black; border: none; border-bottom: 2px solid white; color: white;
+  font-size: 20px; padding: 0.4rem 0.8rem; width: 280px; outline: none; text-align: center; font-family: sans-serif;
 }
 
-.main-layout {
-  display: flex;
-  gap: 2rem;
-  padding: 2rem;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  background: black;
-}
+.main-layout { display: flex; gap: 2rem; padding: 2rem; border-radius: 10px; align-items: center; justify-content: center; background: black; }
+.canvas-wrapper { display: flex; justify-content: center; align-items: center; }
+.stickman-container { position: relative; width: 484px; height: 430px; }
+.stickman { width: 100%; height: auto; z-index: 1; }
+.accessory { position: absolute; pointer-events: none; z-index: 2; }
 
-.canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.stickman-container {
-  position: relative;
-  width: 484px;
-  height: 430px;
-}
-
-.stickman {
-  width: 100%;
-  height: auto;
-  z-index: 1;
-}
-
-.accessory {
-  position: absolute;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.layer-0 {
-  z-index: 4;
-  top: -11px;
-  width: 507px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.layer-1 {
-  z-index: 3;
-  top: -5px;
-  width: 500px;
-  left: 49%;
-  transform: translateX(-50%);
-}
-
-.layer-2 {
-  z-index: 2;
-  top: 26px;
-  width: 458px;
-  left: 50%;
-  transform: translateX(-50%);
-}
+.layer-0 { z-index: 4; top: -11px; width: 507px; left: 50%; transform: translateX(-50%); }
+.layer-1 { z-index: 3; top: -5px; width: 500px; left: 49%; transform: translateX(-50%); }
+.layer-2 { z-index: 2; top: 26px; width: 458px; left: 50%; transform: translateX(-50%); }
 
 .arrow-button {
-  font-size: 24px;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  background-color: white;
-  color: black;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
+  font-size: 24px; padding: 0.6rem 1rem; border-radius: 6px; background-color: white; color: black;
+  font-weight: bold; border: none; cursor: pointer; transition: 0.2s;
 }
+.arrow-button:hover { background-color: darkred; color: white; }
 
-.arrow-button:hover {
-  background-color: darkred;
-  color: white;
+.back-button, .export-button {
+  padding: 0.6rem 1.2rem; font-size: 18px; background-color: white; color: black;
+  border: none; border-radius: 6px; transition: 0.3s; font-family: 'HoaxVandal', sans-serif;
 }
+.back-button:hover, .export-button:hover { background-color: darkred; color: white; }
 
-.back-button {
-  padding: 0.6rem 1.2rem;
-  font-size: 18px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: 0.3s;
-  font-family: 'HoaxVandal', sans-serif;
-}
+.button-row { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; }
 
-.back-button:hover {
-  background-color: darkred;
-  color: white;
-}
+.focused { background-color: darkred !important; color: white !important; transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+.input-field.focused { border-bottom: 3px solid darkred; background-color: rgba(139,0,0,0.1); }
 
-.button-row {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.export-button {
-  padding: 0.6rem 1.2rem;
-  font-size: 18px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: 0.3s;
-  font-family: 'HoaxVandal', sans-serif;
-}
-
-.export-button:hover {
-  background-color: darkred;
-  color: white;
-}
-
-.focused {
-  background-color: darkred !important;
-  color: white !important;
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.input-field.focused {
-  border-bottom: 3px solid darkred;
-  background-color: rgba(139, 0, 0, 0.1);
-}
-
-.keyboard-help {
-  margin-top: 2rem;
-  padding: 0.6rem 1rem;
-  background-color: white;
-  border-radius: 6px;
-  text-align: center;
-}
-
-.help-text {
-  font-size: 14px;
-  color: black;
-  font-family: sans-serif;
-}
+.keyboard-help { margin-top: 2rem; padding: 0.6rem 1rem; background-color: white; border-radius: 6px; text-align: center; }
+.help-text { font-size: 14px; color: black; font-family: sans-serif; }
 </style>

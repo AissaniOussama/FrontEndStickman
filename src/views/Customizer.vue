@@ -3,23 +3,13 @@
     <div class="content-wrapper">
       <h3 class="custom-font">Stickman Customizer</h3>
 
-      <!-- Name-Eingabe mit Button -->
       <div class="name-input-container">
-        <input
-          v-model="customName"
-          placeholder="Name eingeben..."
-          class="name-input custom-font"
-        />
+        <input v-model="customName" placeholder="Name eingeben..." class="name-input custom-font" />
         <button @click="generateRandomName" class="random-button custom-font">?</button>
       </div>
 
-      <!-- Besitzer-Eingabe mit unsichtbarem Platzhalter-Button -->
       <div class="name-input-container">
-        <input
-          v-model="customOwner"
-          placeholder="Ersteller des Stickman..."
-          class="name-input custom-font"
-        />
+        <input v-model="customOwner" placeholder="Ersteller des Stickman..." class="name-input custom-font" />
         <button disabled class="random-button transparent-button"></button>
       </div>
 
@@ -56,14 +46,12 @@
         </div>
       </div>
 
-      <!-- Save, Export & Back Buttons nebeneinander -->
       <div class="button-row">
         <button class="export-button" @click="exportAsPNG" :class="{ 'focused': currentFocus === 3 }">Export PNG</button>
         <button class="save-button" @click="saveToBackend" :class="{ 'focused': currentFocus === 4 }">Save</button>
         <button class="back-button" @click="goBack" :class="{ 'focused': currentFocus === 5 }">Back</button>
       </div>
 
-      <!-- Keyboard navigation help -->
       <div class="keyboard-help">
         <span class="help-text">⌨️ Tab: Switch focus • ← →: Change selection • Space/Enter: Activate</span>
       </div>
@@ -103,12 +91,10 @@ function increase(index: number) {
   const len = categoryImages[index].length
   currentIndexes.value[index] = (currentIndexes.value[index] + 1) % len
 }
-
 function decrease(index: number) {
   const len = categoryImages[index].length
   currentIndexes.value[index] = (currentIndexes.value[index] - 1 + len) % len
 }
-
 function getImagePath(file: string) {
   return `/images/${file}`
 }
@@ -129,9 +115,13 @@ async function saveToBackend() {
     console.error('❌ Fehler beim Speichern:', error)
   }
 }
+function goBack() { router.push('/') }
 
-function goBack() {
-  router.push('/')
+// Dateinamen absichern
+function sanitizeFilename(name: string) {
+  const trimmed = (name || '').trim()
+  const fallback = 'MeinStickman'
+  return (trimmed || fallback).replace(/[\/\\?%*:|"<>]/g, '_')
 }
 
 async function exportAsPNG() {
@@ -144,7 +134,7 @@ async function exportAsPNG() {
   const accessoryEls = Array.from(containerEl.querySelectorAll('img.accessory')) as HTMLImageElement[]
   const allEls = [baseEl, ...accessoryEls].filter(Boolean)
 
-  // 1) Gesamte Bounding-Box über ALLE Layer berechnen (auch wenn etwas übersteht)
+  // Bounding-Box über alle Layer
   let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity, maxBottom = -Infinity
   allEls.forEach((el) => {
     const r = el.getBoundingClientRect()
@@ -154,17 +144,10 @@ async function exportAsPNG() {
     maxBottom = Math.max(maxBottom, r.bottom)
   })
 
-  // relative zur Container-Position normalisieren
-  const contRect = containerEl.getBoundingClientRect()
   const width = maxRight - minLeft
   const height = maxBottom - minTop
-  const offsetX = minLeft - contRect.left
-  const offsetY = minTop - contRect.top
+  const PADDING = 0
 
-  // optional etwas Rand, damit nix “am Rand klebt”
-  const PADDING = 0 // z.B. 8 für etwas Luft
-
-  // 2) Canvas passend zur Content-Box + Padding
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (!ctx) return
@@ -173,7 +156,6 @@ async function exportAsPNG() {
   canvas.height = Math.round((height + PADDING * 2) * dpr)
   ctx.scale(dpr, dpr)
 
-  // Zeichnen-Helfer für exakte DOM-Position
   const drawImgAtRect = (el: HTMLImageElement) =>
     new Promise<void>((resolve) => {
       const src = (el.getAttribute('src') || '').toString()
@@ -189,19 +171,17 @@ async function exportAsPNG() {
       img.src = src
     })
 
-  // 3. In sichtbarer Reihenfolge rendern: zuerst Base, dann Accessories
   await drawImgAtRect(baseEl)
-  for (const el of accessoryEls) {
-    await drawImgAtRect(el)
-  }
+  for (const el of accessoryEls) await drawImgAtRect(el)
 
-  // 4) Download
+  const fileName = sanitizeFilename(customName.value) + '.png'
+
   canvas.toBlob((blob) => {
     if (!blob) return
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${customName.value || 'stickman'}.png`
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -209,313 +189,106 @@ async function exportAsPNG() {
   })
 }
 
-
-
-
 onMounted(() => {
-  // Add keyboard listener for tab and arrow navigation
   const handleKeydown = (event: KeyboardEvent) => {
-    // Don't interfere if user is typing in input fields
-    if (event.target instanceof HTMLInputElement) {
-      return
-    }
+    if (event.target instanceof HTMLInputElement) return
 
     if (event.key === 'Tab') {
       event.preventDefault()
-      // Cycle through focus areas: hat -> top -> bot -> export -> save -> back
       currentFocus.value = (currentFocus.value + 1) % 6
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault()
       if (currentFocus.value < 3) {
-        // In a category, change accessory
         decrease(currentFocus.value)
       } else if (currentFocus.value === 3) {
-        // On export button, go to back button
         currentFocus.value = 5
       } else if (currentFocus.value === 4) {
-        // On save button, go to export button
         currentFocus.value = 3
       } else if (currentFocus.value === 5) {
-        // On back button, go to save button
         currentFocus.value = 4
       } else {
-        // If not focused on anything specific, change hat
         decrease(0)
       }
     } else if (event.key === 'ArrowRight') {
       event.preventDefault()
       if (currentFocus.value < 3) {
-        // In a category, change accessory
         increase(currentFocus.value)
       } else if (currentFocus.value === 3) {
-        // On export button, go to save button
         currentFocus.value = 4
       } else if (currentFocus.value === 4) {
-        // On save button, go to back button
         currentFocus.value = 5
       } else if (currentFocus.value === 5) {
-        // On back button, go to export button
         currentFocus.value = 3
       } else {
-        // If not focused on anything specific, change hat
         increase(0)
       }
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
-      // Switch to previous category
       currentFocus.value = (currentFocus.value - 1 + 3) % 3
     } else if (event.key === 'ArrowDown') {
       event.preventDefault()
-      // Switch to next category
       currentFocus.value = (currentFocus.value + 1) % 3
-    } else if (event.key === 'Enter') {
+    } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      if (currentFocus.value === 3) {
-        exportAsPNG()
-      } else if (currentFocus.value === 4) {
-        saveToBackend()
-      } else if (currentFocus.value === 5) {
-        goBack()
-      }
-    } else if (event.key === ' ') {
-      event.preventDefault()
-      if (currentFocus.value === 3) {
-        exportAsPNG()
-      } else if (currentFocus.value === 4) {
-        saveToBackend()
-      } else if (currentFocus.value === 5) {
-        goBack()
-      }
+      if (currentFocus.value === 3) exportAsPNG()
+      else if (currentFocus.value === 4) saveToBackend()
+      else if (currentFocus.value === 5) goBack()
     }
   }
-
   document.addEventListener('keydown', handleKeydown)
 })
 </script>
 
 <style scoped>
 .page-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  zoom: 0.8;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: black; display: flex; justify-content: center; align-items: center; zoom: 0.8;
 }
+.content-wrapper { text-align: center; padding: 2rem; }
+h3.custom-font { font-family: 'HoaxVandal', sans-serif; font-size: 32px; color: white; margin-bottom: 2rem; }
 
-.content-wrapper {
-  text-align: center;
-  padding: 2rem;
-}
-
-h3.custom-font {
-  font-family: 'HoaxVandal', sans-serif;
-  font-size: 32px;
-  color: white;
-  margin-bottom: 2rem;
-}
-
-.name-input-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 1.2rem;
-  gap: 1rem;
-}
-
+.name-input-container { display: flex; justify-content: center; align-items: center; margin-bottom: 1.2rem; gap: 1rem; }
 .name-input {
-  background: black;
-  border: none;
-  border-bottom: 2px solid white;
-  color: white;
-  font-size: 20px;
-  padding: 0.4rem 0.8rem;
-  width: 280px;
-  outline: none;
-  text-align: center;
+  background: black; border: none; border-bottom: 2px solid white; color: white;
+  font-size: 20px; padding: 0.4rem 0.8rem; width: 280px; outline: none; text-align: center;
 }
-
 .random-button {
-  font-size: 22px;
-  background: black;
-  color: white;
-  border: 2px solid white;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 22px; background: black; color: white; border: 2px solid white; border-radius: 50%;
+  width: 40px; height: 40px; cursor: pointer; transition: all 0.3s ease;
 }
+.random-button:hover { background: white; color: black; }
+.transparent-button { visibility: hidden; }
 
-.random-button:hover {
-  background: white;
-  color: black;
+.main-layout { display: flex; gap: 2rem; background: black; padding: 2rem; border-radius: 10px; align-items: center; justify-content: center; }
+.canvas-wrapper { display: flex; justify-content: center; align-items: center; }
+.stickman-container { position: relative; width: 484px; height: 430px; }
+.stickman { width: 100%; height: auto; z-index: 1; }
+.accessory { position: absolute; pointer-events: none; z-index: 2; }
+
+.layer-0 { z-index: 4; top: -11px; width: 507px; left: 50%; transform: translateX(-50%); }
+.layer-1 { z-index: 3; top: -5px; width: 500px; left: 49%; transform: translateX(-50%); }
+.layer-2 { z-index: 2; top: 26px; width: 458px; left: 50%; transform: translateX(-50%); }
+
+.number-column { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.number-box { display: flex; gap: 0.5rem; }
+
+button { font-size: 18px; padding: 0.4rem 0.6rem; border: none; border-radius: 4px; background-color: #f0f0f0; cursor: pointer; transition: all 0.3s ease; }
+button:hover { background-color: #e0e0e0; transform: translateY(-2px); }
+
+.button-row { margin-top: 2rem; display: flex; gap: 1.5rem; justify-content: center; }
+.save-button, .back-button, .export-button {
+  padding: 0.6rem 1.2rem; font-size: 18px; background-color: white; color: black;
+  border: none; border-radius: 6px; transition: 0.3s; font-family: 'HoaxVandal', sans-serif;
 }
+.save-button:hover, .back-button:hover, .export-button:hover { background-color: darkred; color: white; }
 
-.transparent-button {
-  visibility: hidden;
-}
+.focused { background-color: darkred !important; color: white !important; transform: scale(1.1); }
 
-.main-layout {
-  display: flex;
-  gap: 2rem;
-  background: black;
-  padding: 2rem;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-.canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.stickman-container {
-  position: relative;
-  width: 484px;
-  height: 430px;
-}
-
-.stickman {
-  width: 100%;
-  height: auto;
-  z-index: 1;
-}
-
-.accessory {
-  position: absolute;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.layer-0 {
-  z-index: 4;
-  top: -11px;
-  width: 507px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.layer-1 {
-  z-index: 3;
-  top: -5px;
-  width: 500px;
-  left: 49%;
-  transform: translateX(-50%);
-}
-
-.layer-2 {
-  z-index: 2;
-  top: 26px;
-  width: 458px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.number-column {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
-}
-
-.number-box {
-  display: flex;
-  gap: 0.5rem;
-}
-
-button {
-  font-size: 18px;
-  padding: 0.4rem 0.6rem;
-  border: none;
-  border-radius: 4px;
-  background-color: #f0f0f0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-2px);
-}
-
-.button-row {
-  margin-top: 2rem;
-  display: flex;
-  gap: 1.5rem;
-  justify-content: center;
-}
-
-.save-button, .back-button {
-  padding: 0.6rem 1.2rem;
-  font-size: 18px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: 0.3s;
-  font-family: 'HoaxVandal', sans-serif;
-}
-
-.save-button:hover, .back-button:hover {
-  background-color: darkred;
-  color: white;
-}
-
-.export-button {
-  padding: 0.6rem 1.2rem;
-  font-size: 18px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: 0.3s;
-  font-family: 'HoaxVandal', sans-serif;
-}
-
-.export-button:hover {
-  background-color: darkred;
-  color: white;
-}
-
-.focused {
-  background-color: darkred !important;
-  color: white !important;
-  transform: scale(1.1);
-
-}
-
-.keyboard-help {
-  margin-top: 1rem;
-  text-align: center;
-  padding: 0.6rem 1rem;
-  background-color: white;
-  border-radius: 6px;
-}
-
-.help-text {
-  font-size: 14px;
-  color: black;
-  font-family: sans-serif;
-}
+.keyboard-help { margin-top: 1rem; text-align: center; padding: 0.6rem 1rem; background-color: white; border-radius: 6px; }
+.help-text { font-size: 14px; color: black; font-family: sans-serif; }
 
 .category-label {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: white;
-  transition: all 0.3s ease;
+  font-size: 18px; font-weight: bold; margin-bottom: 0.5rem; color: white; transition: all 0.3s ease;
 }
-
-.category-label.To {
-  color: darkred;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-  transform: scale(1.1);
-}
+.category-label.To { color: darkred; text-shadow: 0 0 10px rgba(255,255,255,0.8); transform: scale(1.1); }
 </style>

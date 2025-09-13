@@ -128,16 +128,98 @@ function toggleMute() {
 onBeforeUnmount(() => {
   player.value?.destroy?.()
 })
+
+function createPlayer(YT: any) {
+  player.value = new YT.Player(containerId, {
+    width: '640',
+    height: '390',
+    videoId: props.videoId,
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      modestbranding: 1,
+      rel: 0,
+      playsinline: 1,
+      mute: 1,
+      origin: window.location.origin
+    },
+    events: {
+      onReady: async (ev: any) => {
+        console.log('[YT] onReady');
+        ev.target.mute();
+        ev.target.setVolume(START_VOL);
+        ev.target.playVideo();
+        isMuted.value = true;
+        try {
+          ev.target.getIframe()?.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+        } catch {}
+        setTimeout(tryAutoUnmute, AUTO_UNMUTE_DELAY_MS);
+      },
+      onStateChange: (e: any) => {
+        // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 video cued
+        console.log('[YT] state:', e.data);
+      },
+      onError: (e: any) => {
+        // 2,5,100,101,150 -> 101/150 = Einbettung vom Eigentümer verboten
+        console.error('[YT] error:', e.data);
+      }
+    }
+  });
+}
+
+async function tryAutoUnmute(retries = 1) {
+  if (!player.value) return;
+  try {
+    player.value.unMute();
+    player.value.setVolume(START_VOL);
+    const p = player.value.playVideo?.();
+    if (p && typeof p.then === 'function') {
+      p.catch((err: any) => console.warn('[YT] playVideo blocked:', err?.name || err));
+    }
+    isMuted.value = false;
+    await new Promise(r => setTimeout(r, 150));
+    console.log('[YT] isMuted?', player.value.isMuted?.(), 'vol=', player.value.getVolume?.());
+  } catch (err) {
+    console.warn('[YT] tryAutoUnmute err:', err);
+  }
+  // ... (Rest bleibt)
+}
+
+function toggleMute() {
+  if (!player.value) return;
+  if (isMuted.value) {
+    player.value.unMute();
+    player.value.setVolume(START_VOL);
+    const p = player.value.playVideo?.();
+    if (p && typeof p.then === 'function') {
+      p.catch((err: any) => console.warn('[YT] playVideo blocked:', err?.name || err));
+    }
+    isMuted.value = false;
+    console.log('[YT] toggled to unmuted, vol=', player.value.getVolume?.());
+  } else {
+    player.value.mute();
+    isMuted.value = true;
+    console.log('[YT] toggled to muted');
+  }
+}
+
 </script>
 
 <style scoped>
 :root { --accent-red: darkred; }
 
 /* Player unsichtbar/offscreen */
+/* ERSETZEN nur zum Testen */
 .hidden-player {
-  position: absolute; top: -9999px; left: -9999px;
-  width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;
+  position: fixed;
+  bottom: 8px; left: 8px;
+  width: 320px;
+  height: 180px;
+  opacity: 0.01;          /* quasi unsichtbar, aber im Viewport */
+  pointer-events: none;
+  z-index: 1;
 }
+
 
 /* Button oben links (etwas größer: 36px) */
 .sound-btn {

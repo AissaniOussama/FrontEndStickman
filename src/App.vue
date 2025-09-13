@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import YouTubePlayer from '@/components/YouTubePlayer.vue'
+import YouTubePlayer from '@/components/YoutubePlayer.vue'
 </script>
 
 <template>

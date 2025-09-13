@@ -131,8 +131,27 @@ async function exportAsPNG() {
   const dpr = window.devicePixelRatio || 1
 
   const baseEl = containerEl.querySelector('img.stickman') as HTMLImageElement
-  const accessoryEls = Array.from(containerEl.querySelectorAll('img.accessory')) as HTMLImageElement[]
-  const allEls = [baseEl, ...accessoryEls].filter(Boolean)
+
+  // Accessories einsammeln …
+  const accessoryEls = Array.from(
+    containerEl.querySelectorAll('img.accessory')
+  ) as HTMLImageElement[]
+
+  // … und nach z-index (aufsteigend) sortieren → bot (2), top (3), hat (4)
+  const originalOrder = new Map(accessoryEls.map((el, i) => [el, i]))
+  const getZ = (el: Element) => {
+    const z = parseInt(getComputedStyle(el).zIndex || '0', 10)
+    return Number.isFinite(z) ? z : 0
+  }
+  const sortedAccessories = accessoryEls
+    .slice()
+    .sort((a, b) => {
+      const za = getZ(a)
+      const zb = getZ(b)
+      return za !== zb ? za - zb : (originalOrder.get(a)! - originalOrder.get(b)!)
+    })
+
+  const allEls = [baseEl, ...sortedAccessories].filter(Boolean)
 
   // Bounding-Box über alle Layer
   let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity, maxBottom = -Infinity
@@ -171,8 +190,9 @@ async function exportAsPNG() {
       img.src = src
     })
 
+  // Base zuerst, dann sortierte Accessories (unten→oben)
   await drawImgAtRect(baseEl)
-  for (const el of accessoryEls) await drawImgAtRect(el)
+  for (const el of sortedAccessories) await drawImgAtRect(el)
 
   const fileName = sanitizeFilename(customName.value) + '.png'
 

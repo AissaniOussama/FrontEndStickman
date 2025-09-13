@@ -12,6 +12,9 @@
       aria-label="Sound"
       :aria-pressed="!isMuted"
     >
+      <!-- roter Strich bei Mute -->
+      <span v-show="isMuted" class="mute-line" aria-hidden="true"></span>
+
       <!-- PNG als Maske -> nur weiße Form, kein Quadrat -->
       <span class="icon-mask"></span>
     </button>
@@ -34,21 +37,39 @@ const START_VOL = Math.max(0, Math.min(100, props.volume ?? 15))
 const size = props.size
 const AUTO_UNMUTE_DELAY_MS = 1000
 
-onMounted(() => {
-  if (!window.YT) {
-    const s = document.createElement('script')
-    s.src = 'https://www.youtube.com/iframe_api'
-    document.body.appendChild(s)
-    ;(window as any).onYouTubeIframeAPIReady = createPlayer
-  } else {
-    createPlayer()
-  }
+/** YT IFrame API laden und YT zurückgeben (TS-safe, keine window.YT-Errors) */
+function loadYouTubeAPI(): Promise<any> {
+  return new Promise((resolve) => {
+    const w = window as any
+    if (w.YT && w.YT.Player) return resolve(w.YT)
+
+    const tag = document.createElement('script')
+    tag.src = 'https://www.youtube.com/iframe_api'
+    document.head.appendChild(tag)
+
+    w.onYouTubeIframeAPIReady = () => resolve(w.YT)
+  })
+}
+
+onMounted(async () => {
+  const YT = await loadYouTubeAPI()
+  createPlayer(YT)
 })
 
-function createPlayer() {
-  player.value = new window.YT.Player(containerId, {
-    width: '640', height: '390', videoId: props.videoId,
-    playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, playsinline: 1, mute: 1 },
+function createPlayer(YT: any) {
+  player.value = new YT.Player(containerId, {
+    width: '640',
+    height: '390',
+    videoId: props.videoId,
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      modestbranding: 1,
+      rel: 0,
+      playsinline: 1,
+      mute: 1,
+      origin: window.location.origin        // wichtig für Prod (Render)
+    },
     events: {
       onReady: async (ev: any) => {
         ev.target.mute()
@@ -56,7 +77,9 @@ function createPlayer() {
         ev.target.playVideo()
         isMuted.value = true
         await nextTick()
-        try { ev.target.getIframe()?.setAttribute('allow', 'autoplay') } catch {}
+        try {
+          ev.target.getIframe()?.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture')
+        } catch {}
         setTimeout(tryAutoUnmute, AUTO_UNMUTE_DELAY_MS)
       }
     }
@@ -67,14 +90,18 @@ async function tryAutoUnmute(retries = 1) {
   if (!player.value) return
   player.value.unMute()
   player.value.setVolume(START_VOL)
+  player.value.playVideo()                  // Re-Play hilft in Prod
   isMuted.value = false
+
   await new Promise(r => setTimeout(r, 120))
   if (player.value.isMuted?.() || player.value.getVolume?.() === 0) {
-    if (retries > 0) setTimeout(() => tryAutoUnmute(retries - 1), 600)
-    else {
+    if (retries > 0) {
+      setTimeout(() => tryAutoUnmute(retries - 1), 600)
+    } else {
       const once = () => {
         player.value?.unMute()
         player.value?.setVolume(START_VOL)
+        player.value?.playVideo()           // beim User-Event sicherheitshalber
         isMuted.value = false
         window.removeEventListener('click', once)
         window.removeEventListener('touchstart', once)
@@ -90,6 +117,7 @@ function toggleMute() {
   if (isMuted.value) {
     player.value.unMute()
     player.value.setVolume(START_VOL)
+    player.value.playVideo()                // wichtig für Ton-Freigabe
     isMuted.value = false
   } else {
     player.value.mute()
@@ -103,6 +131,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+:root { --accent-red: darkred; }
+
 /* Player unsichtbar/offscreen */
 .hidden-player {
   position: absolute; top: -9999px; left: -9999px;
@@ -121,19 +151,31 @@ onBeforeUnmount(() => {
   padding: 0;
   border-radius: 50%;
   background: rgba(0,0,0,0.6);
-  outline: 2px solid #ffffff;        /* weißer Rand wie beim ? */
+  outline: 2px solid #ffffff;      /* weißer Rand wie beim ? */
   display: grid;
   place-items: center;
   cursor: pointer;
+  overflow: visible;                /* Strich nicht abschneiden */
 }
 .sound-btn:active { transform: scale(0.97); }
 
-/* Nur die Form deiner PNG anzeigen (weiß), KEIN Quadrat */
+/* Mute-Indikator: kleiner roter Strich obenauf */
+.mute-line {
+  position: absolute;
+  z-index: 3;
+  width: 72%;
+  height: 0;
+  border-top: 4.5px solid var(--accent-red);
+  border-radius: 3px;
+  transform: rotate(-35deg);
+  pointer-events: none;
+}
+
+/* Nur die Form deiner PNG anzeigen (weiß), KEIN Quadrat) */
 .icon-mask {
   width: 150%;
   height: 150%;
   background: #ffffff;               /* sichtbare Farbe des Icons */
-  /* Masken für moderne Browser + WebKit */
   -webkit-mask-image: url('/icons/sound.png');
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-size: contain;
@@ -142,9 +184,9 @@ onBeforeUnmount(() => {
   mask-repeat: no-repeat;
   mask-size: contain;
   mask-position: center;
-  mask-mode: luminance;              /* Weiß = sichtbar, Schwarz = transparent */
+  mask-mode: luminance;
 }
 
-/* Optional: beim Mute leichte Rottönung des Rands (nur kosmetisch) */
+/* Optional: beim Mute Rand rötlich (rein kosmetisch) */
 .sound-btn.muted { outline-color: #ff5a5a; }
 </style>

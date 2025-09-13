@@ -130,8 +130,8 @@ onBeforeUnmount(() => {
 
 /* Nur die Form deiner PNG anzeigen (weiß), KEIN Quadrat */
 .icon-mask {
-  width: 68%;
-  height: 68%;
+  width: 150%;
+  height: 150%;
   background: #ffffff;               /* sichtbare Farbe des Icons */
   /* Masken für moderne Browser + WebKit */
   -webkit-mask-image: url('/icons/sound.png');

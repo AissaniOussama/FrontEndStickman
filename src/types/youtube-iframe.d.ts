@@ -1,19 +1,10 @@
+// src/types/youtube-iframe.d.ts
 export {}
 
 declare global {
   interface Window {
+    // YT bewusst NICHT optional, damit TS kein "possibly undefined" meckert
+    YT: any
     onYouTubeIframeAPIReady: () => void
-    YT?: {
-      Player: new (el: string | HTMLElement, opts: any) => {
-        playVideo(): void
-        mute(): void
-        unMute(): void
-        setVolume(v: number): void
-        isMuted(): boolean
-        getVolume(): number
-        destroy(): void
-        getIframe(): HTMLIFrameElement
-      }
-    }
   }
 }
